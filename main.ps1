@@ -39,7 +39,7 @@ function Get-NewMessages($messagesList) {
 
 function MatchKeyword ($message) {
     foreach ($keyWord in $keyWords) {
-        if ($message -match "(\n|^)$keyWord`$") { return $true }
+        if ($message -eq $keyWord) { return $true }
     }
     return $false
 }
@@ -73,11 +73,11 @@ while ($true) {
         Enter-SeUrl "https://discord.com/channels/@me/$id" -Driver $Driver
         $userName = (Find-SeElement -Driver $Driver -classname "title-29uC1r").GetAttribute("innerText")
         Write-Host -Fore Green "Checking $userName messages $id"
-        $messagesList = Find-SeElement -Driver $Driver -classname "contents-2mQqc9" # These are all the messages in the chat
+        $messagesList = Find-SeElement -Driver $Driver -classname "messageContent-2qWWxC" # These are all the messages in the chat
         $notSent[$id] = Get-Date -format "yyyy/MM/dd hh:mm:ss tt"
 
         $results = Get-NewMessages $messagesList
-        if ($results | where-object { MatchKeyword $_.text }) {
+        if ($results | where-object { MatchKeyword $_.getAttribute("innerText") }) {
             # Send the message
             $chatboxes = Find-SeElement -Driver $Driver -classname "slateTextArea-1Mkdgw" # The messaging input box
             $message = Get-BotMessage $id $userName
@@ -96,7 +96,7 @@ while ($true) {
             else { Write-Host -ForegroundColor Red "No message Returned, no message sent to $id $userName" }
         }        
         foreach ($result in $results) {
-            if (-not (MatchKeyword $result.text)) {
+            if (-not (MatchKeyword $result.getAttribute("innerText"))) {
                 # Mark message as unread, click the message so the elipsis button shows up
                 $result | Invoke-SeClick
                 (Find-SeElement -Driver $Driver -classname "button-1ZiXG9")[2] | Invoke-SeClick -Driver $Driver -JavaScriptClick # The three dots that show up on hover
